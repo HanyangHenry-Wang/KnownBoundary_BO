@@ -1,6 +1,6 @@
-from know_boundary.GP import optimise,optimise_warp
-from know_boundary.utlis import Trans_function, get_initial_points
-from know_boundary.acquisition_function import EI_acquisition_opt,MES_acquisition_opt,Warped_TEI2_acquisition_opt
+from known_boundary.GP import optimise,optimise_warp
+from known_boundary.utlis import Trans_function, get_initial_points
+from known_boundary.acquisition_function import EI_acquisition_opt,MES_acquisition_opt,Warped_TEI2_acquisition_opt
 import numpy as np
 import matplotlib.pyplot as plt
 import GPy
@@ -68,7 +68,7 @@ for information in function_information:
     
     n_init = 4*dim
     iter_num = 12*dim
-    N = 25
+    N = 1
 
     fstar = information['fstar']
     fun = Trans_function(fun,fstar,min=True)
