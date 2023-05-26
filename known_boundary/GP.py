@@ -103,7 +103,7 @@ def log_llk_warp(X,y,parameters):
     if np.isnan(KK_x_x).any(): #NaN
         print("nan in KK_x_x !")   
 
-    try:
+    try: #check whether it is singular
         L=scipy.linalg.cholesky(KK_x_x,lower=True)
         alpha=np.linalg.solve(KK_x_x,y_warp)
 

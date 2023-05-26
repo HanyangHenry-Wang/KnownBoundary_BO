@@ -1,7 +1,5 @@
 import numpy as np
-from sklearn.metrics.pairwise import euclidean_distances
 from scipy.optimize import minimize
-from scipy import special
 from scipy.stats import norm
 
 ##################### GP acquisition function ########################################################

@@ -2,10 +2,8 @@ from known_boundary.GP import optimise,optimise_warp
 from known_boundary.utlis import Trans_function, get_initial_points
 from known_boundary.acquisition_function import EI_acquisition_opt,MES_acquisition_opt,Warped_TEI2_acquisition_opt
 import numpy as np
-import matplotlib.pyplot as plt
 import GPy
 import torch
-import botorch
 from botorch.test_functions import Ackley,Levy,Beale,Branin,Hartmann,Rosenbrock
 from botorch.utils.transforms import unnormalize,normalize
 
@@ -37,6 +35,13 @@ temp['min']=True
 function_information.append(temp)
 
 temp={}
+temp['name']='Levy4D' 
+temp['function'] = Levy(dim=4,negate=False)
+temp['fstar'] = 0.
+temp['min']=True 
+function_information.append(temp)
+
+temp={}
 temp['name']='Rosenbrock5D' 
 temp['function'] = Rosenbrock(dim=5,negate=False)
 temp['fstar'] = 0.
@@ -44,18 +49,12 @@ temp['min']=True
 function_information.append(temp)
 
 temp={}
-temp['name']='Ackley6D' 
-temp['function'] = Ackley(dim=6,negate=False)
+temp['name']='Ackley7D' 
+temp['function'] = Ackley(dim=7,negate=False)
 temp['fstar'] = 0.
 temp['min']=True 
 function_information.append(temp)
 
-temp={}
-temp['name']='Levy8D' 
-temp['function'] = Levy(dim=8,negate=False)
-temp['fstar'] = 0.
-temp['min']=True 
-function_information.append(temp)
 
 
 
@@ -67,7 +66,7 @@ for information in function_information:
     standard_bounds=np.array([0.,1.]*dim).reshape(-1,2)
     
     n_init = 4*dim
-    iter_num = 12*dim
+    iter_num = 10*dim 
     N = 1
 
     fstar = information['fstar']
@@ -214,7 +213,7 @@ for information in function_information:
                 Y_BO = torch.cat((Y_BO, Y_next), dim=0)
                 
                 best_record.append(Y_BO.min().item())
-                print(best_record[-1])
+                #print(best_record[-1])
                 
         best_record = np.array(best_record)+fstar         
         Warped_BO_TEI2.append(best_record)
