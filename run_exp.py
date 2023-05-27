@@ -7,25 +7,28 @@ import torch
 from botorch.test_functions import Ackley,Levy,Beale,Branin,Hartmann,Rosenbrock
 from botorch.utils.transforms import unnormalize,normalize
 
+import warnings
+warnings.filterwarnings("ignore")
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.double
 
 function_information = []
 
 
-temp={}
-temp['name']='Branin2D' 
-temp['function'] = Branin(negate=False)
-temp['fstar'] =  0.397887
-temp['min']=True 
-function_information.append(temp)
+# temp={}
+# temp['name']='Branin2D' 
+# temp['function'] = Branin(negate=False)
+# temp['fstar'] =  0.397887
+# temp['min']=True 
+# function_information.append(temp)
 
-temp={}
-temp['name']='Beale2D' 
-temp['function'] = Beale(negate=False)
-temp['fstar'] =  0.
-temp['min']=True 
-function_information.append(temp)
+# temp={}
+# temp['name']='Beale2D' 
+# temp['function'] = Beale(negate=False)
+# temp['fstar'] =  0.
+# temp['min']=True 
+# function_information.append(temp)
 
 temp={}
 temp['name']='Hartmann3D' 
@@ -34,26 +37,26 @@ temp['fstar'] =  -3.86278
 temp['min']=True 
 function_information.append(temp)
 
-temp={}
-temp['name']='Levy4D' 
-temp['function'] = Levy(dim=4,negate=False)
-temp['fstar'] = 0.
-temp['min']=True 
-function_information.append(temp)
+# temp={}
+# temp['name']='Levy4D' 
+# temp['function'] = Levy(dim=4,negate=False)
+# temp['fstar'] = 0.
+# temp['min']=True 
+# function_information.append(temp)
 
-temp={}
-temp['name']='Rosenbrock5D' 
-temp['function'] = Rosenbrock(dim=5,negate=False)
-temp['fstar'] = 0.
-temp['min']=True 
-function_information.append(temp)
+# temp={}
+# temp['name']='Rosenbrock5D' 
+# temp['function'] = Rosenbrock(dim=5,negate=False)
+# temp['fstar'] = 0.
+# temp['min']=True 
+# function_information.append(temp)
 
-temp={}
-temp['name']='Ackley7D' 
-temp['function'] = Ackley(dim=7,negate=False)
-temp['fstar'] = 0.
-temp['min']=True 
-function_information.append(temp)
+# temp={}
+# temp['name']='Ackley7D' 
+# temp['function'] = Ackley(dim=7,negate=False)
+# temp['fstar'] = 0.
+# temp['min']=True 
+# function_information.append(temp)
 
 
 
@@ -66,8 +69,8 @@ for information in function_information:
     standard_bounds=np.array([0.,1.]*dim).reshape(-1,2)
     
     n_init = 4*dim
-    iter_num = 10*dim 
-    N = 1
+    iter_num = min(10*dim,60) 
+    N = 20
 
     fstar = information['fstar']
     fun = Trans_function(fun,fstar,min=True)

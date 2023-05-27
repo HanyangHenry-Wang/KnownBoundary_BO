@@ -29,6 +29,8 @@ def log_llk(X,y,parameters):
     KK_x_x=cov_RBF(X,X,parameters)+np.eye(len(X))*noise_delta     
     if np.isnan(KK_x_x).any(): #NaN
         print("nan in KK_x_x !")   
+        # print('X is: ',X)
+        # print('parameter is: ',parameters)
 
     try:
         L=scipy.linalg.cholesky(KK_x_x,lower=True)
@@ -64,7 +66,7 @@ def optimise(X, y):
     candidate_holder = []
     
     for _ in range(restart_num):
-      init_hyper = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(50*(hyper_num-1), hyper_num))
+      init_hyper = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(12*hyper_num**2+2*hyper_num, hyper_num))
       logllk_holder = [0]*init_hyper.shape[0]
       for ii,val in enumerate(init_hyper):           
           logllk_holder[ii] = log_llk(X,y,val) 
@@ -140,7 +142,7 @@ def optimise_warp(X, y):
     candidate_holder = []
     
     for _ in range(restart_num):
-      init_hyper = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(50*(hyper_num-1), hyper_num))
+      init_hyper = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(12*hyper_num**2+2*hyper_num, hyper_num))
       logllk_holder = [0]*init_hyper.shape[0]
       for ii,val in enumerate(init_hyper):           
           logllk_holder[ii] = log_llk_warp(X,y,val) 
