@@ -4,7 +4,7 @@ from known_boundary.acquisition_function import EI_acquisition_opt,MES_acquisiti
 import numpy as np
 import GPy
 import torch
-from botorch.test_functions import Ackley,Levy,Beale,Branin,Hartmann,Rosenbrock
+from botorch.test_functions import Ackley,Levy,Beale,Branin,Hartmann,Rosenbrock,Powell
 from botorch.utils.transforms import unnormalize,normalize
 
 import warnings
@@ -30,19 +30,19 @@ function_information = []
 # temp['min']=True 
 # function_information.append(temp)
 
-temp={}
-temp['name']='Hartmann3D' 
-temp['function'] = Hartmann(dim=3,negate=False)
-temp['fstar'] =  -3.86278
-temp['min']=True 
-function_information.append(temp)
-
 # temp={}
-# temp['name']='Levy4D' 
-# temp['function'] = Levy(dim=4,negate=False)
-# temp['fstar'] = 0.
+# temp['name']='Hartmann3D' 
+# temp['function'] = Hartmann(dim=3,negate=False)
+# temp['fstar'] =  -3.86278
 # temp['min']=True 
 # function_information.append(temp)
+
+temp={}
+temp['name']='Powell4D' 
+temp['function'] = Powell(dim=4,negate=False)
+temp['fstar'] = 0.
+temp['min']=True 
+function_information.append(temp)
 
 # temp={}
 # temp['name']='Rosenbrock5D' 
@@ -79,6 +79,8 @@ for information in function_information:
     BO_EI = []
 
     for exp in range(N):
+        
+        print(exp)
         
         seed = exp
 
@@ -126,6 +128,8 @@ for information in function_information:
     for exp in range(N):
 
         seed = exp
+        
+        print(exp)
     
         X_BO = get_initial_points(bounds, n_init,device,dtype,seed=seed)
         Y_BO = torch.tensor(
@@ -175,6 +179,8 @@ for information in function_information:
     for exp in range(N):
 
         seed = exp
+        
+        print(exp)
 
         X_BO = get_initial_points(bounds, n_init,device,dtype,seed=seed)
         Y_BO = torch.tensor(
