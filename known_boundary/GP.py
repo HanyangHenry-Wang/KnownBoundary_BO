@@ -2,6 +2,7 @@ import numpy as np
 import scipy
 from sklearn.metrics.pairwise import euclidean_distances
 from scipy.optimize import minimize
+from scipy.optimize import fmin_l_bfgs_b
 
 
 def cov_RBF(x1, x2, parameters):  
@@ -25,12 +26,18 @@ def log_llk(X,y,parameters):
     noise_delta = 10**(-6)
     
     parameters = parameters.reshape(-1,2)
+    
+    if np.isnan(parameters).any():
+        print('issue with scipy.minimize!')
+        
+        return -np.inf
 
     KK_x_x=cov_RBF(X,X,parameters)+np.eye(len(X))*noise_delta     
     if np.isnan(KK_x_x).any(): #NaN
         print("nan in KK_x_x !")   
-        # print('X is: ',X)
-        # print('parameter is: ',parameters)
+        #print('X is: ',X)
+        print('parameter is: ',parameters)
+        print(np.isnan(parameters).any())
 
     try:
         L=scipy.linalg.cholesky(KK_x_x,lower=True)
@@ -87,6 +94,8 @@ def optimise(X, y):
     return best_parameter
 
 
+
+
 #################### Log GP ############################
 def log_llk_warp(X,y,parameters):
 
@@ -95,6 +104,12 @@ def log_llk_warp(X,y,parameters):
     parameters = parameters.reshape(-1,3)
     kernel_parameters = parameters[:,:2]
     c = parameters[:,-1]
+    
+    if np.isnan(parameters).any():
+        
+        print('issue with scipy.minimize!')
+        
+        return -np.inf
     
     y_temp = np.log(y+c)
     y_temp_mean = np.mean(y_temp)

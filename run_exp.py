@@ -37,12 +37,12 @@ function_information = []
 # temp['min']=True 
 # function_information.append(temp)
 
-temp={}
-temp['name']='Powell4D' 
-temp['function'] = Powell(dim=4,negate=False)
-temp['fstar'] = 0.
-temp['min']=True 
-function_information.append(temp)
+# temp={}
+# temp['name']='Powell4D' 
+# temp['function'] = Powell(dim=4,negate=False)
+# temp['fstar'] = 0.
+# temp['min']=True 
+# function_information.append(temp)
 
 # temp={}
 # temp['name']='Rosenbrock5D' 
@@ -51,12 +51,12 @@ function_information.append(temp)
 # temp['min']=True 
 # function_information.append(temp)
 
-# temp={}
-# temp['name']='Ackley7D' 
-# temp['function'] = Ackley(dim=7,negate=False)
-# temp['fstar'] = 0.
-# temp['min']=True 
-# function_information.append(temp)
+temp={}
+temp['name']='Ackley7D' 
+temp['function'] = Ackley(dim=7,negate=False)
+temp['fstar'] = 0.
+temp['min']=True 
+function_information.append(temp)
 
 
 
