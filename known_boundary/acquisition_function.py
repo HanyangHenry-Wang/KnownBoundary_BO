@@ -90,6 +90,49 @@ def MES_acquisition_opt(model,bounds,fstar): #bound should an array of size dim*
   return X_next
 
 
+def LCB(X,dim,model,beta): # X is a 2-dimensional array because we will use it in scipy.minimize
+
+  X = X.reshape(-1,dim)
+
+  mean,var = model.predict(X,include_likelihood=False)
+  
+  var[var<10**(-12)]=10**(-12)
+
+  out= mean - beta*np.sqrt(var)
+
+  return out.ravel()  #make the shape to be 1 dimensional
+
+
+
+def LCB_acquisition_opt(model,bounds,beta): #bound should an array of size dim*2
+  dim = bounds.shape[0]
+  opts ={'maxiter':50*dim,'maxfun':50*dim,'disp': False}
+
+  restart_num = 3*dim
+  X_candidate = []
+  AF_candidate = []
+
+  for i in range(restart_num):
+    init_X = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(30*dim, dim))
+    value_holder = LCB(init_X,dim,model,beta)
+      
+    x0=init_X[np.argmin(value_holder)]
+
+    res = minimize(lambda x: LCB(X=x,dim=dim,model=model,beta=beta),x0,
+                                  bounds=bounds,method="L-BFGS-B",options=opts) #L-BFGS-B  nelder-mead(better for rough function) Powell
+
+    X_temp =  res.x  
+    AF_temp = LCB(X=np.array(X_temp).reshape(-1,1),dim=dim,model=model,beta=beta)
+    
+    X_candidate.append(X_temp)
+    AF_candidate.append(AF_temp)
+
+  X_next = X_candidate[np.argmin(AF_candidate)]
+  lcb = np.min(AF_candidate)
+
+  return X_next,lcb
+
+
 ##################### log GP acquisition function ########################################################
 
 def Warped_TEI2(X,dim,f_best,c,f_mean,model): # X is a 2-dimensional array because we will use it in scipy.minimize
