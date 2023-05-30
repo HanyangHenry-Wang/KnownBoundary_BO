@@ -1,6 +1,6 @@
 import torch
 from botorch.utils.sampling import draw_sobol_samples
-
+import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.double
@@ -26,3 +26,7 @@ class Trans_function:
             y = self.fun(X)-self.fstar
         
         return y
+    
+def transform(y,fstar):
+  y_transformed = np.sqrt(2*(y-fstar))
+  return y_transformed

@@ -1,6 +1,6 @@
 from known_boundary.GP import optimise,optimise_warp
-from known_boundary.utlis import Trans_function, get_initial_points
-from known_boundary.acquisition_function import EI_acquisition_opt,MES_acquisition_opt,Warped_TEI2_acquisition_opt
+from known_boundary.utlis import Trans_function, get_initial_points,transform
+from known_boundary.acquisition_function import EI_acquisition_opt,MES_acquisition_opt,Warped_TEI2_acquisition_opt,LCB_acquisition_opt,ERM_acquisition_opt
 import numpy as np
 import GPy
 import torch
@@ -75,7 +75,7 @@ for information in function_information:
     fstar = information['fstar']
     fun = Trans_function(fun,fstar,min=True)
     
-    ################################# GP+EI ###########################################
+    ################################################### GP+EI ###########################################
     BO_EI = []
 
     for exp in range(N):
@@ -228,4 +228,75 @@ for information in function_information:
         Warped_BO_TEI2.append(best_record)
         
     np.savetxt('exp_res/'+information['name']+'_logBO_TEI2', Warped_BO_TEI2, delimiter=',')
+    
+    
+    
+    ############################################### ERM ###############################################################
+    BO_ERM = []
+    for exp in range(N):
+
+        print(exp)  
+        seed = exp
         
+        fstar0 = 0.
+        Trans = False
+
+        X_BO = get_initial_points(bounds, n_init,device,dtype,seed=seed)
+        Y_BO = torch.tensor(
+                    [fun(x) for x in X_BO], dtype=dtype, device=device
+                ).reshape(-1,1)
+
+        best_record = [Y_BO.min().item()]
+
+        for i in range(iter_num):
+
+            #print(iter)
+            train_Y = (Y_BO - Y_BO.mean()) / Y_BO.std()
+            train_X = normalize(X_BO, bounds)
+            
+            train_Y = train_Y.numpy()
+            train_X = train_X.numpy()
+            
+
+            fstar_standard = (fstar0 - Y_BO.mean()) / Y_BO.std()
+            fstar_standard = fstar_standard.item()
+            
+            if not Trans:
+                minimal = np.min(train_X)
+                res = optimise(train_X,train_Y)
+                kernel = GPy.kern.RBF(input_dim=dim,lengthscale= np.sqrt(res[0]),variance=res[1]) 
+                m = GPy.models.GPRegression(train_X, train_Y,kernel)
+                m.Gaussian_noise.variance.fix(10**(-5))
+
+                standard_next_X = EI_acquisition_opt(m,bounds=standard_bounds,f_best=minimal)
+                
+                beta = np.sqrt(np.log(train_X.shape[0]))
+                _,lcb = LCB_acquisition_opt(m,standard_bounds,beta)
+                if lcb < fstar_standard:
+                    Trans = True
+            
+            else:                        
+                train_Y_transform = transform(y=train_Y,fstar=fstar_standard)
+                mean_temp = np.mean(train_Y_transform)
+                
+                res = optimise(train_X,(train_Y_transform-mean_temp))
+                kernel = GPy.kern.RBF(input_dim=dim,lengthscale= np.sqrt(res[0]),variance=res[1]) 
+                m = GPy.models.GPRegression(train_X, train_Y_transform-mean_temp,kernel)
+                m.Gaussian_noise.variance.fix(10**(-5))
+                standard_next_X,erm_value = ERM_acquisition_opt(m,bounds=standard_bounds,fstar=fstar_standard,mean_temp=mean_temp)
+            
+            
+            X_next = unnormalize(torch.tensor(standard_next_X), bounds).reshape(-1,dim)     
+            Y_next = fun(X_next).reshape(-1,1)
+
+            # Append data
+            X_BO = torch.cat((X_BO, X_next), dim=0)
+            Y_BO = torch.cat((Y_BO, Y_next), dim=0)
+
+            best_value = float(Y_BO.min())
+            best_record.append(best_value)
+
+
+    best_record = np.array(best_record)+fstar
+    BO_ERM.append(best_record)
+            

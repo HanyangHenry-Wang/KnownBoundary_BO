@@ -133,6 +133,58 @@ def LCB_acquisition_opt(model,bounds,beta): #bound should an array of size dim*2
   return X_next,lcb
 
 
+
+################################# Vu's model #############################################################
+def ERM(X,dim,fstar,model,mean_temp): # X is a 2-dimensional array because we will use it in scipy.minimize
+
+  #model_temp = copy.deepcopy(model)
+  X = X.reshape(-1,dim)
+
+  mean_g,var_g = model.predict(X,include_likelihood=False)
+  mean_g = mean_g + mean_temp
+
+  var_g[var_g<10**(-12)]=10**(-12)
+  sigma_g = np.sqrt(var_g)
+  
+
+  mu_f = fstar + 1/2*mean_g**2
+  sigma_f = mean_g**2 * sigma_g
+
+  gamma = (mu_f - fstar)/sigma_f      
+  out=sigma_f * norm.pdf(gamma) + (mu_f - fstar) * norm.cdf(gamma)
+
+  return out.ravel()  #make the shape to be 1 dimensional
+
+
+
+def ERM_acquisition_opt(model,bounds,fstar,mean_temp): #bound should an array of size dim*2
+  dim = bounds.shape[0]
+  opts ={'maxiter':50*dim,'maxfun':50*dim,'disp': False}
+
+  restart_num = 3*dim
+  X_candidate = []
+  AF_candidate = []
+
+  for i in range(restart_num):
+    init_X = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(30*dim, dim))
+    value_holder = ERM(init_X,dim,fstar,model,mean_temp)
+      
+    x0=init_X[np.argmin(value_holder)]
+
+    res = minimize(lambda x: ERM(X=x,dim=dim,fstar=fstar,model=model,mean_temp=mean_temp),x0,
+                                  bounds=bounds,method="L-BFGS-B",options=opts) #L-BFGS-B  nelder-mead(better for rough function) Powell
+
+    X_temp =  res.x      
+    AF_temp = ERM(X=np.array(X_temp).reshape(-1,1),dim=dim,fstar=fstar,model=model,mean_temp=mean_temp)
+    
+    X_candidate.append(X_temp)
+    AF_candidate.append(AF_temp)
+
+  X_next = X_candidate[np.argmin(AF_candidate)]
+
+  return X_next,np.min(AF_candidate)
+
+
 ##################### log GP acquisition function ########################################################
 
 def Warped_TEI2(X,dim,f_best,c,f_mean,model): # X is a 2-dimensional array because we will use it in scipy.minimize
