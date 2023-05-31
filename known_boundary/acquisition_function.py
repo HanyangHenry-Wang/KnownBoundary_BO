@@ -3,7 +3,7 @@ from scipy.optimize import minimize
 from scipy.stats import norm
 
 ##################### GP acquisition function ########################################################
-def EI(X,dim,f_best,model): # X is a 2-dimensional array because we will use it in scipy.minimize
+def EI(X,dim,f_best,model,f_star='no'): # X is a 2-dimensional array because we will use it in scipy.minimize
 
   X = X.reshape(-1,dim)
 
@@ -11,14 +11,27 @@ def EI(X,dim,f_best,model): # X is a 2-dimensional array because we will use it 
   
   var[var<10**(-12)]=10**(-12)
 
-  z = (f_best - mean)/np.sqrt(var)        
-  out=(f_best - mean) * norm.cdf(z) + np.sqrt(var) * norm.pdf(z)
+  # z = (f_best - mean)/np.sqrt(var)        
+  # out=(f_best - mean) * norm.cdf(z) + np.sqrt(var) * norm.pdf(z)
 
+  if f_star == 'no':
+      z = (f_best - mean)/np.sqrt(var)        
+      out=(f_best - mean) * norm.cdf(z) + np.sqrt(var) * norm.pdf(z)
+  else:
+      z = (f_best - mean)/np.sqrt(var)        
+      out1=(f_best - mean) * norm.cdf(z) + np.sqrt(var) * norm.pdf(z)
+      
+      z = (f_star - mean)/np.sqrt(var)        
+      out2=(f_star - mean) * norm.cdf(z) + np.sqrt(var) * norm.pdf(z)
+      
+      out = out1 - out2
+    
+  
   return out.ravel()  #make the shape to be 1 dimensional
 
 
 
-def EI_acquisition_opt(model,bounds,f_best): #bound should an array of size dim*2
+def EI_acquisition_opt(model,bounds,f_best,f_star='no'): #bound should an array of size dim*2
   dim = bounds.shape[0]
   opts ={'maxiter':50*dim,'maxfun':50*dim,'disp': False}
 
@@ -28,15 +41,15 @@ def EI_acquisition_opt(model,bounds,f_best): #bound should an array of size dim*
 
   for i in range(restart_num):
     init_X = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(30*dim, dim))
-    value_holder = EI(init_X,dim,f_best,model)
+    value_holder = EI(init_X,dim,f_best,model,f_star)
       
     x0=init_X[np.argmax(value_holder)]
 
-    res = minimize(lambda x: -EI(X=x,dim=dim,f_best=f_best,model=model),x0,
+    res = minimize(lambda x: -EI(X=x,dim=dim,f_best=f_best,model=model,f_star=f_star),x0,
                                   bounds=bounds,method="L-BFGS-B",options=opts) #L-BFGS-B  nelder-mead(better for rough function) Powell
 
     X_temp =  res.x  
-    AF_temp = EI(X=np.array(X_temp).reshape(-1,1),dim=dim,f_best=f_best,model=model)
+    AF_temp = EI(X=np.array(X_temp).reshape(-1,1),dim=dim,f_best=f_best,model=model,f_star=f_star)
     
     X_candidate.append(X_temp)
     AF_candidate.append(AF_temp)

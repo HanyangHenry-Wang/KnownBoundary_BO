@@ -289,7 +289,7 @@ for exp in range(N):
             best_record.append(Y_BO.min().item())
             #print(best_record[-1])
             
-    best_record = np.array(best_record)+fstar         
+    best_record = fstar-(np.array(best_record))     
     Warped_BO_TEI2.append(best_record)
     
 np.savetxt('exp_res/XGBoost_logBO_TEI2', Warped_BO_TEI2, delimiter=',')
@@ -345,7 +345,75 @@ for exp in range(N):
             
             best_record.append(Y_BO.min().item())
             
-    best_record = np.array(best_record)+fstar 
+    best_record = fstar-(np.array(best_record))
     BO_LCB.append(best_record)
     
 np.savetxt('exp_res/XGBoost_BO_LCB', BO_LCB, delimiter=',')
+
+
+
+print('GP-TEI')
+BO_TEI = []
+
+for exp in range(N):
+    
+    print(exp)
+
+    seed = exp
+    
+    fun = XGBoost(seed=exp)
+    dim = fun.dim
+    bounds = fun.bounds
+    
+    fstar = 100
+    fun = Trans_function(fun,fstar,min=False)
+    
+
+    X_BO = get_initial_points(bounds, n_init,device,dtype,seed=seed)
+    Y_BO = torch.tensor(
+        [fun(x) for x in X_BO], dtype=dtype, device=device
+    ).reshape(-1,1)
+    
+    fstar0 = 0.
+
+
+    best_record = [Y_BO.min().item()]
+
+    for i in range(iter_num):
+        
+            train_Y = (Y_BO - Y_BO.mean()) / Y_BO.std()
+            train_X = normalize(X_BO, bounds)
+            
+            fstar_standard = (fstar0 - Y_BO.mean()) / Y_BO.std()
+            fstar_standard = fstar_standard.item()
+            
+            minimal = train_Y.min().item()
+            
+            train_Y = train_Y.numpy()
+            train_X = train_X.numpy()
+            
+            # train the GP
+            res = optimise(train_X,train_Y)
+            # print('lengthscale is: ',np.sqrt(res[0])) 
+            # print('variance is: ',res[1])
+            kernel = GPy.kern.RBF(input_dim=dim,lengthscale= np.sqrt(res[0]),variance=res[1]) 
+            m = GPy.models.GPRegression(train_X, train_Y,kernel)
+            m.Gaussian_noise.variance.fix(10**(-5))
+
+            standard_next_X = EI_acquisition_opt(m,bounds=standard_bounds,f_best=minimal,f_star=fstar_standard)
+            X_next = unnormalize(torch.tensor(standard_next_X), bounds).reshape(-1,dim)            
+            Y_next = fun(X_next).reshape(-1,1)
+
+            # Append data
+            X_BO = torch.cat((X_BO, X_next), dim=0)
+            Y_BO = torch.cat((Y_BO, Y_next), dim=0)
+            
+            best_record.append(Y_BO.min().item())
+            #print(best_record)
+            
+    best_record = fstar-(np.array(best_record))
+    BO_TEI.append(best_record)
+    
+    
+np.savetxt('exp_res/XGBoost_BO_TEI', BO_TEI, delimiter=',')
+        
