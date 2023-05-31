@@ -24,6 +24,9 @@ class Trans_function:
         
         if self.min:
             y = self.fun(X)-self.fstar
+        else:
+            fstar = -self.fstar
+            y = -self.fun(X)-fstar
         
         return y
     

@@ -27,6 +27,8 @@ class XGBoost:
         self.data = np.genfromtxt('Skin_NonSkin.txt', dtype=np.int32)
         
     def __call__(self, X): # this is actually a Branin function
+        
+        X = X.numpy().reshape(6,)
 
         
         alpha,gamma,max_depth,min_child_weight,subsample,colsample=X[0],X[1],X[2],X[3],X[4],X[5]
@@ -42,4 +44,4 @@ class XGBoost:
                        min_child_weight=min_child_weight,colsample_bytree=colsample, n_estimators = 2, random_state=self.seed, objective = 'binary:logistic', booster='gbtree',eval_metric='logloss',silent=None)
         score = np.array(cross_val_score(reg, X=X_train1, y=y_train1).mean())
       
-        return score*100
+        return torch.tensor([score*100])

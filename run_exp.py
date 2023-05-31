@@ -16,12 +16,12 @@ dtype = torch.double
 function_information = []
 
 
-# temp={}
-# temp['name']='Branin2D' 
-# temp['function'] = Branin(negate=False)
-# temp['fstar'] =  0.397887
-# temp['min']=True 
-# function_information.append(temp)
+temp={}
+temp['name']='Branin2D' 
+temp['function'] = Branin(negate=False)
+temp['fstar'] =  0.397887
+temp['min']=True 
+function_information.append(temp)
 
 # temp={}
 # temp['name']='Beale2D' 
@@ -34,6 +34,13 @@ function_information = []
 # temp['name']='Hartmann3D' 
 # temp['function'] = Hartmann(dim=3,negate=False)
 # temp['fstar'] =  -3.86278
+# temp['min']=True 
+# function_information.append(temp)
+
+# temp={}
+# temp['name']='Levy4D' 
+# temp['function'] = Levy(dim=4,negate=False)
+# temp['fstar'] = 0.
 # temp['min']=True 
 # function_information.append(temp)
 
@@ -51,12 +58,12 @@ function_information = []
 # temp['min']=True 
 # function_information.append(temp)
 
-temp={}
-temp['name']='Ackley7D' 
-temp['function'] = Ackley(dim=7,negate=False)
-temp['fstar'] = 0.
-temp['min']=True 
-function_information.append(temp)
+# temp={}
+# temp['name']='Ackley7D' 
+# temp['function'] = Ackley(dim=7,negate=False)
+# temp['fstar'] = 0.
+# temp['min']=True 
+# function_information.append(temp)
 
 
 
@@ -70,7 +77,7 @@ for information in function_information:
     
     n_init = 4*dim
     iter_num = min(10*dim,60) 
-    N = 20
+    N = 1
 
     fstar = information['fstar']
     fun = Trans_function(fun,fstar,min=True)
@@ -120,7 +127,7 @@ for information in function_information:
         best_record = np.array(best_record)+fstar 
         BO_EI.append(best_record)
         
-    np.savetxt('exp_res/'+information['name']+'_BO_EI', BO_EI, delimiter=',')
+    #np.savetxt('exp_res/'+information['name']+'_BO_EI', BO_EI, delimiter=',')
         
     ##################################################### GP+MES ##################################################
     BO_MES = []
@@ -171,7 +178,7 @@ for information in function_information:
         best_record = np.array(best_record)+fstar 
         BO_MES.append(best_record)
         
-    np.savetxt('exp_res/'+information['name']+'_BO_MES', BO_MES, delimiter=',')
+    #np.savetxt('exp_res/'+information['name']+'_BO_MES', BO_MES, delimiter=',')
     
     ##################################################### log GP+TEI2 ##################################################
     Warped_BO_TEI2 = []
@@ -187,7 +194,7 @@ for information in function_information:
             [fun(x) for x in X_BO], dtype=dtype, device=device
         ).reshape(-1,1)
 
-  
+
 
         best_record = [Y_BO.min().item()]
 
@@ -227,7 +234,7 @@ for information in function_information:
         best_record = np.array(best_record)+fstar         
         Warped_BO_TEI2.append(best_record)
         
-    np.savetxt('exp_res/'+information['name']+'_logBO_TEI2', Warped_BO_TEI2, delimiter=',')
+    #np.savetxt('exp_res/'+information['name']+'_logBO_TEI2', Warped_BO_TEI2, delimiter=',')
     
     
     
@@ -297,6 +304,57 @@ for information in function_information:
             best_record.append(best_value)
 
 
-    best_record = np.array(best_record)+fstar
-    BO_ERM.append(best_record)
+        best_record = np.array(best_record)+fstar
+        BO_ERM.append(best_record)
+        
+    #np.savetxt('exp_res/'+information['name']+'_BO_ERM', BO_ERM, delimiter=',')
+    
+    
+    ################################################################ GP+LCB ##################################################
+    BO_LCB = []
+
+    for exp in range(N):
+
+        seed = exp
+        
+        print(exp)
+    
+        X_BO = get_initial_points(bounds, n_init,device,dtype,seed=seed)
+        Y_BO = torch.tensor(
+            [fun(x) for x in X_BO], dtype=dtype, device=device
+        ).reshape(-1,1)
+        
+
+        best_record = [Y_BO.min().item()]
+
+        for i in range(iter_num):
+            
+                train_Y = (Y_BO - Y_BO.mean()) / Y_BO.std()
+                train_X = normalize(X_BO, bounds)
+                
+                
+                train_Y = train_Y.numpy()
+                train_X = train_X.numpy()
+                
+                # train the GP
+                res = optimise(train_X,train_Y)
+                kernel = GPy.kern.RBF(input_dim=dim,lengthscale= np.sqrt(res[0]),variance=res[1]) 
+                m = GPy.models.GPRegression(train_X, train_Y,kernel)
+                m.Gaussian_noise.variance.fix(10**(-5))
+                
+                beta = np.sqrt(np.log(train_X.shape[0]))
+                standard_next_X,_ =LCB_acquisition_opt(m,standard_bounds,beta)
+                X_next = unnormalize(torch.tensor(standard_next_X), bounds).reshape(-1,dim)            
+                Y_next = fun(X_next).reshape(-1,1)
+
+                # Append data
+                X_BO = torch.cat((X_BO, X_next), dim=0)
+                Y_BO = torch.cat((Y_BO, Y_next), dim=0)
+                
+                best_record.append(Y_BO.min().item())
+                
+        best_record = np.array(best_record)+fstar 
+        BO_LCB.append(best_record)
+        
+    #np.savetxt('exp_res/'+information['name']+'_BO_LCB', BO_LCB, delimiter=',')
             
