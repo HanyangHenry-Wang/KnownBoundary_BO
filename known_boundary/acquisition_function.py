@@ -200,6 +200,54 @@ def ERM_acquisition_opt(model,bounds,fstar,mean_temp): #bound should an array of
 
 ##################### log GP acquisition function ########################################################
 
+
+def Warped_EI(X,dim,f_best,c,f_mean,model): # X is a 2-dimensional array because we will use it in scipy.minimize
+
+
+  X = X.reshape(-1,dim)
+
+  mean,var = model.predict(X,include_likelihood=False)  
+  var[var<10**(-12)]=10**(-12)
+  sigma = np.sqrt(var)
+  mu = mean+f_mean
+
+  C = c+f_best
+  
+  out = C*norm.cdf((np.log(C)-mu)/sigma)-np.exp(mu+sigma**2/2)*norm.cdf((np.log(C)-mu-sigma**2)/sigma)
+
+  return out.ravel()  #make the shape to be 1 dimensional
+
+
+
+def Warped_EI_acquisition_opt(model,bounds,f_best,c,f_mean): #bound should an array of size dim*2
+  dim = bounds.shape[0]
+  opts ={'maxiter':50*dim,'maxfun':50*dim,'disp': False}
+
+  restart_num = 3*dim
+  X_candidate = []
+  AF_candidate = []
+
+  for i in range(restart_num):
+    init_X = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(30*dim, dim))
+    value_holder =  Warped_EI(init_X,dim,f_best,c,f_mean,model)
+      
+    x0=init_X[np.argmax(value_holder)]
+
+    res = minimize(lambda x: -Warped_EI(X=x,dim=dim,f_best=f_best,c=c,f_mean=f_mean,model=model),x0,
+                                  bounds=bounds,method="L-BFGS-B",options=opts) #L-BFGS-B  nelder-mead(better for rough function) Powell
+
+    X_temp =   res.x  
+    AF_temp = Warped_EI(X=np.array(X_temp).reshape(-1,1),dim=dim,f_best=f_best,c=c,f_mean=f_mean,model=model)
+    
+    X_candidate.append(X_temp)
+    AF_candidate.append(AF_temp)
+
+  X_next = X_candidate[np.argmax(AF_candidate)]
+
+  return X_next
+
+
+
 def Warped_TEI2(X,dim,f_best,c,f_mean,model): # X is a 2-dimensional array because we will use it in scipy.minimize
 
 

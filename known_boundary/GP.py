@@ -66,14 +66,14 @@ def optimise(X, y):
     opts ={'maxiter':1000,'maxfun':200,'disp': False}
 
     bounds = np.array([[0.015**2,0.6**2],[0.01,10]])
-    hyper_num = 2
-    restart_num = 3**hyper_num
+    hyper_num = 2  #lengthscale, variance
+    restart_num = 9*hyper_num  #3**hyper_num 
     
     value_holder = []
     candidate_holder = []
     
     for _ in range(restart_num):
-      init_hyper = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(12*hyper_num**2+2*hyper_num, hyper_num))
+      init_hyper = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(60*(hyper_num-1), hyper_num))  #(12*hyper_num**2+2*hyper_num, hyper_num)
       logllk_holder = [0]*init_hyper.shape[0]
       for ii,val in enumerate(init_hyper):           
           logllk_holder[ii] = log_llk(X,y,val) 
@@ -151,13 +151,51 @@ def optimise_warp(X, y):
     
     bounds = np.array([[0.015**2,0.6**2],[0.01,10.],[10**(-5),0.3]])  
     hyper_num = 3
-    restart_num = 3**hyper_num
+    restart_num = 9*hyper_num  #3**hyper_num
     
     value_holder = []
     candidate_holder = []
     
     for _ in range(restart_num):
-      init_hyper = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(12*hyper_num**2+2*hyper_num, hyper_num))
+      init_hyper = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(60*(hyper_num-1), hyper_num))
+      logllk_holder = [0]*init_hyper.shape[0]
+      for ii,val in enumerate(init_hyper):           
+          logllk_holder[ii] = log_llk_warp(X,y,val) 
+          
+      x0=init_hyper[np.argmax(logllk_holder)] # we pick one best value from 50 random one as our initial value of the optimization
+
+      # Then we minimze negative likelihood
+      res = minimize(lambda x: -log_llk_warp(X,y,parameters=x),x0,
+                                  bounds=bounds,method="L-BFGS-B",options=opts) 
+
+      candidate_holder.append(res.x)
+      value_holder.append(log_llk_warp(X,y,res.x))
+
+
+    best_parameter = candidate_holder[np.argmax(value_holder)]
+  
+        
+    return best_parameter
+
+
+
+
+def optimise_warp_no_boundary(X, y,upper=1):
+
+    opts ={'maxiter':1000,'maxfun':200,'disp': False}
+    
+    ymin = np.min(y)
+    
+    bounds = np.array([[0.015**2,0.6**2],[0.01,10.],[-ymin+10**(-5),-ymin+upper]])  
+    
+    hyper_num = 3
+    restart_num = 9*hyper_num 
+    
+    value_holder = []
+    candidate_holder = []
+    
+    for _ in range(restart_num):
+      init_hyper = np.random.uniform(bounds[:, 0], bounds[:, 1],size=(60*(hyper_num-1), hyper_num))
       logllk_holder = [0]*init_hyper.shape[0]
       for ii,val in enumerate(init_hyper):           
           logllk_holder[ii] = log_llk_warp(X,y,val) 

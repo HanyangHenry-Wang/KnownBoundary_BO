@@ -37,12 +37,12 @@ temp['fstar'] =  -3.86278
 temp['min']=True 
 function_information.append(temp)
 
-temp={}
-temp['name']='Levy4D' 
-temp['function'] = Levy(dim=4,negate=False)
-temp['fstar'] = 0.
-temp['min']=True 
-function_information.append(temp)
+# temp={}
+# temp['name']='Levy4D' 
+# temp['function'] = Levy(dim=4,negate=False)
+# temp['fstar'] = 0.
+# temp['min']=True 
+# function_information.append(temp)
 
 temp={}
 temp['name']='Powell4D' 
