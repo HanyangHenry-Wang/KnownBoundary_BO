@@ -67,7 +67,7 @@ def optimise(X, y):
 
     bounds = np.array([[0.015**2,0.6**2],[0.01,10]])
     hyper_num = 2  #lengthscale, variance
-    restart_num = 9*hyper_num  #3**hyper_num 
+    restart_num =  9*hyper_num  
     
     value_holder = []
     candidate_holder = []
@@ -151,7 +151,7 @@ def optimise_warp(X, y):
     
     bounds = np.array([[0.015**2,0.6**2],[0.01,10.],[10**(-5),0.3]])  
     hyper_num = 3
-    restart_num = 9*hyper_num  #3**hyper_num
+    restart_num = 9*hyper_num  
     
     value_holder = []
     candidate_holder = []
